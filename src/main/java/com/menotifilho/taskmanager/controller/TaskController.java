@@ -21,38 +21,43 @@ public class TaskController {
 
     @GetMapping
     public ResponseEntity<List<TaskResponseDTO>> getAllTasks() {
-        List<TaskResponseDTO> taskList = taskService.findAll();
+        var user = getLoggedUser();
+
+        List<TaskResponseDTO> taskList = taskService.findAll(user);
+
         return ResponseEntity.ok(taskList);
     }
 
     @PostMapping
-    public ResponseEntity<TaskResponseDTO> newTask(@RequestBody Task task){
-        var user =  getLoggedUser();
+    public ResponseEntity<TaskResponseDTO> newTask(@RequestBody Task task) {
+        var user = getLoggedUser();
 
-        return ResponseEntity.ok(taskService.createTask(task,user));
+        return ResponseEntity.ok(taskService.createTask(task, user));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponseDTO> updateTask(@PathVariable Long id, @RequestBody Task task){
-        var user =  getLoggedUser();
+    public ResponseEntity<TaskResponseDTO> updateTask(@PathVariable Long id, @RequestBody Task task) {
+        var user = getLoggedUser();
 
-        return ResponseEntity.ok(taskService.updateTask(id,user,task));
+        return ResponseEntity.ok(taskService.updateTask(id, user, task));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id){
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id, getLoggedUser());
         return ResponseEntity.noContent().build();
     }
-    
+
     @GetMapping("/{id}")
-    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id){
-        return ResponseEntity.ok(taskService.findById(id));
+    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id) {
+        var user = getLoggedUser();
+
+        return ResponseEntity.ok(taskService.findById(id, user));
     }
 
-    private User getLoggedUser(){
+    private User getLoggedUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()){
+        if (authentication == null || !authentication.isAuthenticated()) {
             throw new IllegalStateException();
         }
         return (User) authentication.getPrincipal();

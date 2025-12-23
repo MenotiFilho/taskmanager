@@ -18,13 +18,17 @@ public class TaskService {
     @Autowired
     private TaskRepository taskRepository;
 
-    public List<TaskResponseDTO> findAll() {
-        List<TaskResponseDTO> taskList = taskRepository.findAll().stream().map(task -> new TaskResponseDTO(task)).toList();
+    public List<TaskResponseDTO> findAll(User user) {
+        List<TaskResponseDTO> taskList = taskRepository.findByUser(user)
+                .stream()
+                .map(task -> new TaskResponseDTO(task))
+                .toList();
         return taskList;
     }
 
-    public TaskResponseDTO findById(Long id){
-        TaskResponseDTO task = new TaskResponseDTO(taskRepository.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada!")));
+    public TaskResponseDTO findById(Long id, User user){
+        TaskResponseDTO task = new TaskResponseDTO(taskRepository.findByIdAndUser(id,user)
+                .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada!")));
         return task;
     }
 

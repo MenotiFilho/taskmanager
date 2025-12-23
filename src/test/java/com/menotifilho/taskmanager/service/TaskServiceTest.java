@@ -42,15 +42,16 @@ class TaskServiceTest {
         t1.setTitle("Task 1");
         t1.setUser(user);
 
-        when(taskRepository.findAll()).thenReturn(List.of(t1));
+        when(taskRepository.findByUser(user)).thenReturn(List.of(t1));
 
         //Action
-        List<TaskResponseDTO> result = taskService.findAll();
+        List<TaskResponseDTO> result = taskService.findAll(user);
 
         //Assert
         assertNotNull(result);
-        assertEquals(1,result.size());
+        assertEquals(1, result.size());
         assertEquals("Task 1", result.get(0).title());
+        verify(taskRepository).findByUser(user);
     }
 
     @Test
@@ -58,11 +59,14 @@ class TaskServiceTest {
     void findByIdCaseError() {
         //Setup
         Long idInexistente = 99L;
-        when(taskRepository.findById(idInexistente)).thenReturn(Optional.empty());
+        User user = new User();
+        user.setId(1L);
+
+        when(taskRepository.findByIdAndUser(idInexistente, user)).thenReturn(Optional.empty());
 
         //Action + Assert
-        assertThrows(ResponseStatusException.class, ()-> {
-            taskService.findById(idInexistente);
+        assertThrows(ResponseStatusException.class, () -> {
+            taskService.findById(idInexistente, user);
         });
     }
 
@@ -71,6 +75,7 @@ class TaskServiceTest {
     void findByIdSuccess() {
         //Setup
         User user = new User();
+        user.setId(1L);
         user.setUsername("menoti");
 
         Task taskMock = new Task();
@@ -78,10 +83,10 @@ class TaskServiceTest {
         taskMock.setTitle("Tarefa Teste");
         taskMock.setUser(user);
 
-        when(taskRepository.findById(10L)).thenReturn(Optional.of(taskMock));
+        when(taskRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(taskMock));
 
         //Action
-        TaskResponseDTO resultado = taskService.findById(10L);
+        TaskResponseDTO resultado = taskService.findById(10L, user);
 
         //Assert
         assertNotNull(resultado);
@@ -104,6 +109,7 @@ class TaskServiceTest {
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
             Task t = invocation.getArgument(0);
             t.setId(1L);
+            t.setUser(user);
             return t;
         });
 
@@ -112,10 +118,10 @@ class TaskServiceTest {
 
         //Assert
         assertNotNull(createdTask);
-        assertEquals(1L,createdTask.id());
+        assertEquals(1L, createdTask.id());
         assertEquals("Estudar Java", createdTask.title());
-        assertEquals(user.getUsername(),createdTask.username());
-        verify(taskRepository,times(1)).save(any());
+        assertEquals(user.getUsername(), createdTask.username());
+        verify(taskRepository, times(1)).save(any());
     }
 
     @Test
@@ -165,7 +171,7 @@ class TaskServiceTest {
 
         // Action & Assert
         assertThrows(ResponseStatusException.class, () -> {
-            taskService.updateTask(10L, invasor,new Task());
+            taskService.updateTask(10L, invasor, new Task());
         });
 
         // Garante que o SAVE nunca foi chamado
