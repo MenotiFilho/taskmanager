@@ -4,6 +4,7 @@ import com.menotifilho.taskmanager.dto.TaskResponseDTO;
 import com.menotifilho.taskmanager.model.Task;
 import com.menotifilho.taskmanager.model.TaskRepository;
 import com.menotifilho.taskmanager.model.User;
+import com.menotifilho.taskmanager.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,29 +20,29 @@ public class TaskController {
     @Autowired
     private TaskRepository taskRepository;
 
+    @Autowired
+    private TaskService taskService;
+
     @GetMapping
     public ResponseEntity<List<TaskResponseDTO>> getAllTasks() {
-        List<TaskResponseDTO> taskList = taskRepository.findAll().stream().map(task -> new TaskResponseDTO(task)).toList();
+        List<TaskResponseDTO> taskList = taskService.findAll();
         return ResponseEntity.ok(taskList);
     }
 
     @PostMapping
     public ResponseEntity<Task> newTask(@RequestBody Task task){
         var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()){
+            throw new IllegalStateException();
+        }
         var user = (User) authentication.getPrincipal();
 
-        task.setUser(user);
-
-        Task savedTask = taskRepository.save(task);
-        return ResponseEntity.ok(savedTask);
-
+        return ResponseEntity.ok(taskService.createTask(task,user));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id){
-        return taskRepository.findById(id)
-                .map(record -> ResponseEntity.ok().body(record))
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id){
+        return ResponseEntity.ok(taskService.findById(id));
     }
 
 }
