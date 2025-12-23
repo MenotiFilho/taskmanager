@@ -50,8 +50,19 @@ public class TaskService {
         taskToUpdate.setDescription(task.getDescription());
         taskToUpdate.setStatus(task.getStatus());
 
-
         return new TaskResponseDTO(taskRepository.save(taskToUpdate));
+    }
+
+    @Transactional
+    public void deleteTask(Long id, User user) {
+        Task taskToDelete = taskRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada!"));
+
+        if (!(user.getId().equals(taskToDelete.getUser().getId()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para alterar esta tarefa!");
+        }
+
+        taskRepository.delete(taskToDelete);
     }
 
 }
