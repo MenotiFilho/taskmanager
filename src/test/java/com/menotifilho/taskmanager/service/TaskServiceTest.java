@@ -117,4 +117,102 @@ class TaskServiceTest {
         assertEquals(user.getUsername(),createdTask.username());
         verify(taskRepository,times(1)).save(any());
     }
+
+    @Test
+    @DisplayName("Deve atualizar a tarefa com sucesso quando usuário é o dono")
+    void updateTaskSuccess() {
+        // Setup
+        User user = new User();
+        user.setId(1L);
+
+        Task existingTask = new Task();
+        existingTask.setId(10L);
+        existingTask.setTitle("Antigo");
+        existingTask.setUser(user);
+
+        Task updateData = new Task();
+        updateData.setTitle("Novo Título");
+        updateData.setDescription("Nova Desc");
+        updateData.setStatus(true);
+
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Action
+        TaskResponseDTO result = taskService.updateTask(10L, user, updateData);
+
+        // Assert
+        assertEquals("Novo Título", result.title());
+        assertEquals(true, result.status());
+        verify(taskRepository).save(existingTask);
+    }
+
+    @Test
+    @DisplayName("Deve lançar 403 Forbidden ao tentar atualizar tarefa de outro usuário")
+    void updateTaskForbidden() {
+        // Setup
+        User dono = new User();
+        dono.setId(1L);
+
+        User invasor = new User();
+        invasor.setId(2L);
+
+        Task task = new Task();
+        task.setId(10L);
+        task.setUser(dono);
+
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
+
+        // Action & Assert
+        assertThrows(ResponseStatusException.class, () -> {
+            taskService.updateTask(10L, invasor,new Task());
+        });
+
+        // Garante que o SAVE nunca foi chamado
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve deletar a tarefa com sucesso quando usuário é o dono")
+    void deleteTaskSuccess() {
+        // Setup
+        User user = new User();
+        user.setId(1L);
+
+        Task task = new Task();
+        task.setId(10L);
+        task.setUser(user);
+
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
+
+        // Action
+        taskService.deleteTask(10L, user);
+
+        // Assert
+        verify(taskRepository, times(1)).delete(task);
+    }
+
+    @Test
+    @DisplayName("Deve lançar 403 Forbidden ao tentar deletar tarefa de outro usuário")
+    void deleteTaskForbidden() {
+        // Setup
+        User dono = new User();
+        dono.setId(1L);
+
+        User invasor = new User();
+        invasor.setId(2L); // ID Diferente
+
+        Task task = new Task();
+        task.setId(10L);
+        task.setUser(dono);
+
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
+
+        // Action & Assert
+        assertThrows(ResponseStatusException.class, () -> {
+            taskService.deleteTask(10L, invasor);
+        });
+
+        verify(taskRepository, never()).delete(any());
+    }
 }
