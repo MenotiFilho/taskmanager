@@ -2,7 +2,6 @@ package com.menotifilho.taskmanager.controller;
 
 import com.menotifilho.taskmanager.dto.TaskResponseDTO;
 import com.menotifilho.taskmanager.model.Task;
-import com.menotifilho.taskmanager.model.TaskRepository;
 import com.menotifilho.taskmanager.model.User;
 import com.menotifilho.taskmanager.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,6 @@ import java.util.List;
 public class TaskController {
 
     @Autowired
-    private TaskRepository taskRepository;
-
-    @Autowired
     private TaskService taskService;
 
     @GetMapping
@@ -30,19 +26,29 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<Task> newTask(@RequestBody Task task){
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()){
-            throw new IllegalStateException();
-        }
-        var user = (User) authentication.getPrincipal();
+    public ResponseEntity<TaskResponseDTO> newTask(@RequestBody Task task){
+        var user =  getLoggedUser();
 
         return ResponseEntity.ok(taskService.createTask(task,user));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskResponseDTO> updateTask(@PathVariable Long id, @RequestBody Task task){
+        var user =  getLoggedUser();
+
+        return ResponseEntity.ok(taskService.updateTask(id,user,task));
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id){
         return ResponseEntity.ok(taskService.findById(id));
     }
 
+    private User getLoggedUser(){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()){
+            throw new IllegalStateException();
+        }
+        return (User) authentication.getPrincipal();
+    }
 }

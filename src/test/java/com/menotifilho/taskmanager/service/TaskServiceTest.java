@@ -108,13 +108,13 @@ class TaskServiceTest {
         });
 
         //Action
-        Task createdTask = taskService.createTask(taskInput, user);
+        TaskResponseDTO createdTask = taskService.createTask(taskInput, user);
 
         //Assert
         assertNotNull(createdTask);
-        assertEquals(1L,createdTask.getId());
-        assertEquals("Estudar Java", createdTask.getTitle());
-        assertEquals(user,createdTask.getUser());
+        assertEquals(1L,createdTask.id());
+        assertEquals("Estudar Java", createdTask.title());
+        assertEquals(user.getUsername(),createdTask.username());
         verify(taskRepository,times(1)).save(any());
     }
 }

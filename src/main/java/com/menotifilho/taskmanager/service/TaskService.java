@@ -29,11 +29,29 @@ public class TaskService {
     }
 
     @Transactional
-    public Task createTask(Task task, User user) {
+    public TaskResponseDTO createTask(Task task, User user) {
 
         task.setUser(user);
 
-        return taskRepository.save(task);
+        return new TaskResponseDTO(taskRepository.save(task));
+    }
+
+    @Transactional
+    public TaskResponseDTO updateTask(Long id, User user, Task task){
+
+        Task taskToUpdate = taskRepository.findById(id)
+                .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada!"));
+
+        if (!(user.getId().equals(taskToUpdate.getUser().getId()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para alterar esta tarefa!");
+        }
+
+        taskToUpdate.setTitle(task.getTitle());
+        taskToUpdate.setDescription(task.getDescription());
+        taskToUpdate.setStatus(task.getStatus());
+
+
+        return new TaskResponseDTO(taskRepository.save(taskToUpdate));
     }
 
 }
